@@ -38,24 +38,24 @@ namespace AdditionalPylons
             GetDataHandlers.SendTileRect.Register(OnSendTileRect, HandlerPriority.High);
            GeneralHooks.ReloadEvent += ReloadConfig;
         }
-    #endregion 
+    #endregion // Plugin overrides
 
     #region Plugin Hooks
     private void OnSendTileRect(object sender, GetDataHandlers.SendTileRectEventArgs e)
     {
             // 如果有更高优先级的插件需要处理，就尊重它们的决定...
-            if (this.isDisposed || e.Handled)
-                return;
+      if (this.isDisposed || e.Handled)
+        return;
 
             // 如果玩家没有权限，就没有必要检查数据
-            if (!e.Player.HasPermission(permission_infiniteplace))
-                return;
+      if (!e.Player.HasPermission(permission_infiniteplace))
+        return;
 
             // 最小的合理检查，这个STR很可能是晶塔
-            if (e.Width != 3 || e.Length != 4)
-                return;
+      if (e.Width != 3 || e.Length != 4)
+        return;
 
-            long savePosition = e.Data.Position;
+      long savePosition = e.Data.Position;
       NetTile[,] tiles = new NetTile[e.Width, e.Length];
 
       for (int x = 0; x < e.Width; x++)
@@ -72,13 +72,13 @@ namespace AdditionalPylons
       }
 
             // 重置数据回到原始位置
-            e.Data.Seek(savePosition, System.IO.SeekOrigin.Begin);
+      e.Data.Seek(savePosition, System.IO.SeekOrigin.Begin);
 
             // 简单地清除主系统的晶塔网络，以欺骗服务器 >:DD
             // 这样做之所以有效，是因为当晶塔系统被放置时，它无论如何都会被刷新。
             // 这个部分是必需的，因为TShock重新实现了带有反弹器的STR，
             // 然后调用PlaceEntityNet，由于在Main.PylonSystem内部已经包含了这种类型的晶塔，所以它会拒绝这个晶塔。
-            Main.PylonSystem._pylons.Clear();
+      Main.PylonSystem._pylons.Clear();
     }
 
     private void OnPlayerUpdate(object sender, TShockAPI.GetDataHandlers.PlayerUpdateEventArgs e)
@@ -98,56 +98,57 @@ namespace AdditionalPylons
         if (!isHoldingPylon)
         {
                     // 停止持有晶塔
-                    playersHoldingPylon.Remove(e.PlayerId);
+          playersHoldingPylon.Remove(e.PlayerId);
 
                     // 为玩家客户端重新加载晶塔系统
-                    SendPlayerPylonSystem(e.PlayerId, true);
-                }
+          SendPlayerPylonSystem(e.PlayerId, true);
+        }
       }
       else
       {
         if (isHoldingPylon)
         {
                     // 开始持有晶塔
-                    playersHoldingPylon.Add(e.PlayerId);
+          playersHoldingPylon.Add(e.PlayerId);
 
                     // 清除玩家客户端的晶塔系统
-                    SendPlayerPylonSystem(e.PlayerId, false);
-                }
-      }
+          SendPlayerPylonSystem(e.PlayerId, false);
         }
-        private void OnPlaceTileEntity(object sender, TShockAPI.GetDataHandlers.PlaceTileEntityEventArgs e)
-        {
+      }
+    }
+
+    private void OnPlaceTileEntity(object sender, TShockAPI.GetDataHandlers.PlaceTileEntityEventArgs e)
+    {
             // 如果插件已被销毁或事件已被处理，则返回
-            if (this.isDisposed || e.Handled)
-                return;
+      if (this.isDisposed || e.Handled)
+        return;
 
             // 如果实体类型不是7（晶塔），则返回
-            if (e.Type != 7)
-                return;
+      if (e.Type != 7)
+        return;
 
             // 如果玩家没有无限放置晶塔的权限，则向所有客户端发送STR以更新非无限晶塔玩家的第一个晶塔放置
-            if (!e.Player.HasPermission(permission_infiniteplace))
-            {
-                TShockAPI.TSPlayer.All.SendTileRect((short)e.X, (short)e.Y, 3, 4);
-                return;
-            }
+      if (!e.Player.HasPermission(permission_infiniteplace))
+      {
+        TShockAPI.TSPlayer.All.SendTileRect((short)e.X, (short)e.Y, 3, 4);
+        return;
+      }
 
             // 在指定位置放置晶塔
             Terraria.GameContent.Tile_Entities.TETeleportationPylon.Place(e.X, e.Y);
 
             // 这是为了更新服务器上的晶塔列表。
             // 注意：重置将向所有玩家广播更改。
-            Main.PylonSystem.Reset();
+      Main.PylonSystem.Reset();
 
             // 由于其他客户端不知道这个晶塔，所以在手动执行TETeleportationPylon.Place()之后发送STR
-            TShockAPI.TSPlayer.All.SendTileRect((short)e.X, (short)e.Y, 3, 4);
+      TShockAPI.TSPlayer.All.SendTileRect((short)e.X, (short)e.Y, 3, 4);
 
             // 从持有晶塔的玩家列表中移除当前玩家
-            playersHoldingPylon.Remove(e.Player.Index);
+      playersHoldingPylon.Remove(e.Player.Index);
 
             //e.Handled = true; // 这行代码被注释掉了，如果需要设置事件已处理，可以取消注释
-        }
+    }
         #endregion // Plugin Hooks
 
         private void SendPlayerPylonSystem(int playerId, bool addPylons)
