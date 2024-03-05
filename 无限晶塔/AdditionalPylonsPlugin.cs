@@ -260,10 +260,6 @@ namespace AdditionalPylons
         }
 
 
-
-
-
-
         #region Plugin Properties
         public override string Name => "[无限晶塔] AdditionalPylons";
 
